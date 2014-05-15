@@ -93,6 +93,8 @@ module.exports = {
 				task[prop] = opt[prop];
 			}
 		});
+		task.viewportSize.width = task.viewportSize.width || 1200;
+		task.viewportSize.height = task.viewportSize.height || 800;
 		task.storagePath = this._getStoragePath(basePath, task.url);
 		var redisKey = this._getRedisKey(basePath, task.url);
 		var cache = opt.cache !== false && opt.cache != 'false';
