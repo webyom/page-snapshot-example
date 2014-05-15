@@ -14,11 +14,11 @@ module.exports = {
 	_client: null,
 
 	_getRedisKey: function(basePath, url) {
-		return encodeURIComponent((basePath + '/' + url).replace(/\/+/g, '\/').replace(/^\/+/g, ''));
+		return encodeURIComponent((basePath + '/' + url).replace(/\/+/g, '\/').replace(/^\/+/g, '')).replace(/%/g, '');
 	},
 
 	_getStoragePath: function(basePath, url) {
-		return (basePath + '/' + encodeURIComponent(url)).replace(/\/+/g, '\/').replace(/^\/+/g, '');
+		return (basePath + '/' + encodeURIComponent(url)).replace(/\/+/g, '\/').replace(/^\/+/g, '').replace(/%/g, '');
 	},
 
 	_request: function(task, callback, redisKey, maxAge) {
@@ -56,6 +56,7 @@ module.exports = {
 		if(!task.url) {
 			return callback({code: RES_CODE.URL_REQUIRED});
 		}
+		basePath = encodeURIComponent(basePath || '').split('.').join('/');
 		opt = opt || {};
 		var clipRect = {};
 		var viewportSize = {};
