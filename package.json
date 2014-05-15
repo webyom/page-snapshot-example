@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "underscore": "~1.6.0",
+    "redis": "~0.10.1",
+    "messenger": "~0.0.9",
+    "yargs": "~1.2.1",
+    "express": "~3.4.7"
+  },
+  "devDependencies": {
+  }
+}
