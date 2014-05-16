@@ -2,13 +2,7 @@ var config = require('../config');
 var messenger = require('messenger');
 var redisClient = require('./redis-client');
 
-var RES_CODE = {
-	OK: 0,
-	ERROR: 1,
-	TIMEOUT: 2,
-	NO_SERVICE: 3,
-	URL_REQUIRED: 4
-};
+var RES_CODE = require('../res-code');
 
 module.exports = {
 	_client: null,
@@ -21,7 +15,7 @@ module.exports = {
 		return (basePath + '/' + encodeURIComponent(url)).replace(/\/+/g, '\/').replace(/^\/+/g, '').replace(/%/g, '');
 	},
 
-	_request: function(task, callback, redisKey, maxAge) {
+	_doSnapshot: function(task, callback, redisKey, maxAge) {
 		this._client.request('snapshot', task, function(res) {
 			if(res.status == 'success') {
 				res.code = RES_CODE.OK;
@@ -43,21 +37,9 @@ module.exports = {
 		});
 	},
 
-	connect: function() {
-		if(this._client) {
-			return;
-		}
-		this._client = messenger.createSpeaker(config.snapshotServer);
-		console.log('Connect to snapshot server ' + config.snapshotServer);
-	},
-
-	request: function(basePath, task, callback, opt) {
-		var that = this;
-		if(!task.url) {
-			return callback({code: RES_CODE.URL_REQUIRED});
-		}
+	_snapshot: function(basePath, task, callback, opt) {
 		basePath = encodeURIComponent(basePath || '').split('.').join('/');
-		opt = opt || {};
+		var that = this;
 		var clipRect = {};
 		var viewportSize = {};
 		opt.clipRectLeft && (clipRect.left = opt.clipRectLeft);
@@ -109,14 +91,57 @@ module.exports = {
 							data: res.data
 						});
 					} else {
-						that._request(task, callback, redisKey, opt.maxAge);
+						that._doSnapshot(task, callback, redisKey, opt.maxAge);
 					}
 				} else {
-					that._request(task, callback, redisKey, opt.maxAge);
+					that._doSnapshot(task, callback, redisKey, opt.maxAge);
 				}
 			});
 		} else {
-			this._request(task, callback, redisKey, opt.maxAge);
+			this._doSnapshot(task, callback, redisKey, opt.maxAge);
+		}
+	},
+
+	_validate: function(task, callback) {
+		this._client.request('validate', task, function(res) {
+			res.data = res.data || {};
+			if(res.status == 'success') {
+				res.code = RES_CODE.OK;
+				res.data.valid = true;
+			} else if(res.status == 'fail') {
+				res.code = RES_CODE.OK;
+				res.data.valid = false;
+			} else if(res.status == 'timeout') {
+				res.code = RES_CODE.TIMEOUT;
+			} else if(res.error === -1) {
+				res.code = RES_CODE.NO_SERVICE;
+			} else {
+				res.code = RES_CODE.ERROR;
+			}
+			callback(res);
+		});
+	},
+
+	connect: function() {
+		if(this._client) {
+			return;
+		}
+		this._client = messenger.createSpeaker(config.snapshotServer);
+		console.log('Connect to snapshot server ' + config.snapshotServer);
+	},
+
+	request: function(basePath, task, callback, opt) {
+		var that = this;
+		opt = opt || {};
+		if(!task.url) {
+			return callback({code: RES_CODE.URL_REQUIRED});
+		}
+		if(opt.task == 'snapshot') {
+			this._snapshot(basePath, task, callback, opt);
+		} else if(opt.task == 'validate') {
+			this._validate(task, callback);
+		} else {
+			return callback({code: RES_CODE.UNKNOWN_TASK});
 		}
 	}
 };

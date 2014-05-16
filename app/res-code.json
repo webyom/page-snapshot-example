@@ -1,0 +1,8 @@
+{
+	"OK": 0,
+	"ERROR": 1,
+	"TIMEOUT": 2,
+	"NO_SERVICE": 3,
+	"URL_REQUIRED": 4,
+	"UNKNOWN_TASK": 5
+}
