@@ -14,7 +14,7 @@ module.exports = {
 	_client: null,
 
 	_getRedisKey: function(basePath, url) {
-		return encodeURIComponent((basePath + '/' + url).replace(/\/+/g, '\/').replace(/^\/+/g, '')).replace(/%/g, '');
+		return ['snapshot', basePath, url].join('/').replace(/\/+/g, '\/').replace(/^\/+/g, '');
 	},
 
 	_getStoragePath: function(basePath, url) {
